@@ -1,0 +1,46 @@
+https://medium.com/@sunilmalik12012/renew-expired-k8s-cluster-certificates-manually-e591ffa4dc6d
+1. Back up the /etc/kubernetes folder on each control plane node to ensure you have a safe copy of the existing certificates.
+
+2. Run the following command to renew all the certificates on each control plane node:
+
+sudo kubeadm certs renew all
+
+3. Verify that the renewed certificates now have an updated expiration time by running the command:
+
+sudo kubeadm certs check-expiration
+4. You can reboot your server. 
+Restart the relevant containers to pick up the renewed certificates. This step involves restarting the kube-apiserver, kube-scheduler, kube-controller-manager, and etcd containers. Not all control plane components support dynamic certificate reload, so restarting the containers is necessary.
+
+Find the container ID for each container using the command:
+sudo crictl ps | grep CONTAINER_NAME
+
+Stop each container:
+sudo crictl stop CONTAINER_ID
+
+- After stopping each container, kubelet creates new containers in their place, effectively picking up the renewed certificates.
+
+Verifying Connectivity:
+After renewing the certificates and restarting the containers, it’s crucial to verify that the connectivity with the Kubernetes API server has been restored. Use the following command on any control plane node:
+
+kubectl get nodes — kubeconfig=/etc/kubernetes/admin.conf
+
+If the certificates are properly renewed, this command should return the list of nodes without any TLS or certificate errors.
+
+Updating the kubeconfig File:
+To ensure that your cluster is using the renewed certificates for authentication and access, update the kubeconfig file as follows:
+
+Create a new kubeconfig file by running the following command on your admin workstation:
+kubectl — kubeconfig=”ADMIN_KUBECONFIG” get secret/CLUSTER_NAME-kubeconfig -n “CLUSTER_NAMESPACE” -o jsonpath=’{.data.value}’ | base64 — decode > new_kubeconfig.conf
+
+Replace the placeholders with the appropriate values:
+— ADMIN_KUBECONFIG: Path to the admin cluster kubeconfig file.
+— CLUSTER_NAME: Name of the cluster you are renewing certificates for.
+— CLUSTER_NAMESPACE: Namespace of the cluster you are renewing certificates for.
+
+2. Verify the functionality of the new kubeconfig
+
+file by running any kubectl command using the new credentials
+
+kubectl get nodes — kubeconfig new_kubeconfig.conf
+
+3. Replace the contents of the old kubeconfig file, which is saved in the cluster directory on your admin workstation, with the contents of the new kubeconfig file (new_kubeconfig.conf).
