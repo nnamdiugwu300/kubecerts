@@ -1,4 +1,5 @@
 https://medium.com/@sunilmalik12012/renew-expired-k8s-cluster-certificates-manually-e591ffa4dc6d
+Follow these steps for all nodes, to update the kubeconfig just do so on the master where you run api calls
 1. Back up the /etc/kubernetes folder on each control plane node to ensure you have a safe copy of the existing certificates.
 
 2. Run the following command to renew all the certificates on each control plane node:
